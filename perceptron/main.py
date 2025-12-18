@@ -1,4 +1,3 @@
-from collections import defaultdict
 from dataclasses import dataclass
 from typing import Optional
 
@@ -12,9 +11,11 @@ class Perceptron:
     def __init__(
             self,
             layer_sizes: list[int],
+            learning_rate: float = 0.1
     ):
+        self._learning_rate = learning_rate
         self._set_neurons(layer_sizes)
-        self._set_weights()
+        self._set_weights(layer_sizes[0], layer_sizes[1])
 
     def _set_neurons(
             self,
@@ -27,45 +28,55 @@ class Perceptron:
                 layer.neurons.append(Neuron(
                     value=None,
                     y=y,
-                    b=np.random.randint(0, size + 1)
+                    b=np.random.normal(loc=0.0, scale=1.0)
                 ))
 
             layers.append(layer)
 
         self._layers = layers
 
-    def _set_weights(self):
-        self._weights = []
-        for layer_1, layer_2 in np.column_stack((self._layers[:-1], self._layers[1:])):
-            self._weights.append(defaultdict(list))
-            for _ in layer_1.neurons:
-                for neuron_2 in layer_2.neurons:
-                    self._weights[layer_1.n][neuron_2.y].append(np.random.normal(loc=0.0, scale=1.0))
+    def _set_weights(
+            self,
+            n_inputs: int,
+            n_outputs: int,
+    ):
+        self._weights = np.random.normal(loc=0.0, scale=1.0, size=(n_outputs, n_inputs))
 
     def predict(
             self,
-            input_values: list[float],
-    ) -> list["Neuron"]:
+            input_values: np.ndarray,
+    ) -> np.ndarray:
         if len(self._layers[0].neurons) != len(input_values):
             raise ValueError("input must be the same size as 1st layer")
 
-        for input_value, neuron in zip(input_values, self._layers[0].neurons):
-            neuron.value = input_value
+        for neuron, val in zip(self._layers[0].neurons, input_values):
+            neuron.value = val
 
-        for layer, weights in zip(self._layers[1:], self._weights):
-            for neuron in layer.neurons:
-                neuron_weights = weights[neuron.y]
+        result_values = self._weights @ input_values
 
-                previous_layer = self._layers[layer.n - 1]
-                neuron_values = [n.value for n in previous_layer.neurons]
+        for neuron, result_value in zip(self._layers[-1].neurons, result_values):
+            neuron.value = 1 if result_value >= neuron.b else -1
 
-                neuron.value = self._calculate_result(
-                    weight_values=np.array(neuron_weights),
-                    neuron_values=np.array(neuron_values),
-                    bias=neuron.b
+        return self._layers[-1].get_neuron_values()
+
+    def fit_model(
+            self,
+            epochs: int,
+            features: np.ndarray,
+            correct_answers: np.ndarray,
+    ) -> None:
+        for _ in range(epochs):
+            for feature, correct_answer in zip(features, correct_answers):
+                prediction = self.predict(feature)
+                difference = prediction - correct_answer
+                delta_w = np.outer(
+                    self._learning_rate * difference,
+                    self._layers[0].get_neuron_values()
                 )
+                self._weights = self._weights - delta_w
 
-        return self._layers[-1]
+                for neuron, y_diff in zip(self._layers[-1].neurons, difference):
+                    neuron.b = neuron.b - self._learning_rate * y_diff
 
     @staticmethod
     def _calculate_result(
@@ -84,12 +95,15 @@ class Layer:
     n: int
     neurons: list["Neuron"]
 
+    def get_neuron_values(self) -> np.ndarray:
+        return np.array([n.value for n in self.neurons])
+
 
 @dataclass
 class Neuron:
     value: Optional[float]
     y: int
-    b: int
+    b: float
 
 
 @dataclass
@@ -101,5 +115,29 @@ class Weight:
     value: float
 
 
-perceptron = Perceptron(layer_sizes=[4, 4, 4])
-print(perceptron.predict(data.values[0][:-1]))
+perceptron = Perceptron(layer_sizes=[4, 3])
+data = np.array(data.values)
+np.random.shuffle(data)
+
+training_data = data[:-5]
+unseen_data = data[-5:]
+
+_, indices = np.unique(training_data[:, 4], return_inverse=True)
+correct_answers = []
+
+for i in indices:
+    answer = [-1, -1, -1]
+    answer[i] = 1
+    correct_answers.append(answer)
+
+perceptron.fit_model(
+    epochs=100,
+    features=training_data[:, :-1],
+    correct_answers=np.array(correct_answers),
+)
+
+for case in unseen_data:
+    print(
+        perceptron.predict(case[:-1]),
+        case[-1]
+    )
