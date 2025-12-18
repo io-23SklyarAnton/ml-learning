@@ -1,3 +1,4 @@
+from collections import defaultdict
 from dataclasses import dataclass
 from typing import Optional
 
@@ -26,7 +27,7 @@ class Perceptron:
                 layer.neurons.append(Neuron(
                     value=None,
                     y=y,
-                    b=np.random.randint(0, size)
+                    b=np.random.randint(0, size + 1)
                 ))
 
             layers.append(layer)
@@ -36,15 +37,10 @@ class Perceptron:
     def _set_weights(self):
         self._weights = []
         for layer_1, layer_2 in np.column_stack((self._layers[:-1], self._layers[1:])):
-            self._weights.append([])
-            for neuron_1, neuron_2 in np.meshgrid(layer_1.neurons, layer_2.neurons, indexing='ij'):
-                self._weights[layer_1.n].append(Weight(
-                    value=np.random.normal(loc=0.0, scale=1.0),
-                    l1=layer_1.n,
-                    l2=layer_2.n,
-                    y1=neuron_1.y,
-                    y2=neuron_2.y,
-                ))
+            self._weights.append(defaultdict(list))
+            for _ in layer_1.neurons:
+                for neuron_2 in layer_2.neurons:
+                    self._weights[layer_1.n][neuron_2.y].append(np.random.normal(loc=0.0, scale=1.0))
 
     def predict(
             self,
@@ -56,9 +52,20 @@ class Perceptron:
         for input_value, neuron in zip(input_values, self._layers[0].neurons):
             neuron.value = input_value
 
-        for layer in self._layers[1:]:
-            for neurons, weights in zip(layer.neurons, self._weights):
-                pass
+        for layer, weights in zip(self._layers[1:], self._weights):
+            for neuron in layer.neurons:
+                neuron_weights = weights[neuron.y]
+
+                previous_layer = self._layers[layer.n - 1]
+                neuron_values = [n.value for n in previous_layer.neurons]
+
+                neuron.value = self._calculate_result(
+                    weight_values=np.array(neuron_weights),
+                    neuron_values=np.array(neuron_values),
+                    bias=neuron.b
+                )
+
+        return self._layers[-1]
 
     @staticmethod
     def _calculate_result(
@@ -94,5 +101,5 @@ class Weight:
     value: float
 
 
-for row in data.values:
-    print(row)
+perceptron = Perceptron(layer_sizes=[4, 4, 4])
+print(perceptron.predict(data.values[0][:-1]))
