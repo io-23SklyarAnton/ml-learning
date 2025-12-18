@@ -1,10 +1,7 @@
-from dataclasses import dataclass
-from typing import Optional
-
-from pandas import read_csv
 import numpy as np
 
-data = read_csv("iris.csv")
+from perceptron_implementation.layer import Layer
+from perceptron_implementation.neuron import Neuron
 
 
 class Perceptron:
@@ -88,56 +85,3 @@ class Perceptron:
         result = np.sum(result_matrix)
 
         return 1 if result >= bias else -1
-
-
-@dataclass
-class Layer:
-    n: int
-    neurons: list["Neuron"]
-
-    def get_neuron_values(self) -> np.ndarray:
-        return np.array([n.value for n in self.neurons])
-
-
-@dataclass
-class Neuron:
-    value: Optional[float]
-    y: int
-    b: float
-
-
-@dataclass
-class Weight:
-    l1: Layer
-    y1: int
-    l2: Layer
-    y2: int
-    value: float
-
-
-perceptron = Perceptron(layer_sizes=[4, 3])
-data = np.array(data.values)
-np.random.shuffle(data)
-
-training_data = data[:-5]
-unseen_data = data[-5:]
-
-_, indices = np.unique(training_data[:, 4], return_inverse=True)
-correct_answers = []
-
-for i in indices:
-    answer = [-1, -1, -1]
-    answer[i] = 1
-    correct_answers.append(answer)
-
-perceptron.fit_model(
-    epochs=100,
-    features=training_data[:, :-1],
-    correct_answers=np.array(correct_answers),
-)
-
-for case in unseen_data:
-    print(
-        perceptron.predict(case[:-1]),
-        case[-1]
-    )
