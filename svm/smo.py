@@ -1,126 +1,150 @@
 import numpy as np
-from scipy.optimize import fsolve
+import random
+from typing import Optional
 
 
-def get_parabolic_function(a, b) -> callable:
-    def df(alpha):
-        return -a * alpha + b
+class SMOSolver:
+    def __init__(
+            self,
+            C: float,
+            tol: float,
+            max_passes: int,
+            gamma: float,
+    ):
+        self.C = C
+        self.tol = tol
+        self.max_passes = max_passes
+        self.gamma = gamma
+        self.alphas: Optional[np.ndarray] = None
+        self.b: float = 0.0
+        self.X: Optional[np.ndarray] = None
+        self.y: Optional[np.ndarray] = None
+        self.m: int = 0
+        self.n: int = 0
 
-    return df
+    def kernel(
+            self,
+            x1: np.ndarray,
+            x2: np.ndarray
+    ) -> float:
+        diff = x1 - x2
+        return np.exp(-self.gamma * np.dot(diff, diff))
 
+    def _predict_score(
+            self,
+            x_input: np.ndarray
+    ) -> float:
+        prediction = 0.0
+        for i in range(self.m):
+            prediction += self.alphas[i] * self.y[i] * self.kernel(self.X[i], x_input)
+        return prediction + self.b
 
-def smo(
-        train_data: np.ndarray,
-        gamma: float
-) -> np.ndarray:
-    n_samples = len(train_data)
-    alphas = np.random.normal(loc=0.0, scale=1.0, size=(1, n_samples))
-    train_data_alphas = np.hstack((train_data, alphas))
+    def _calc_error(
+            self,
+            index: int
+    ) -> float:
+        return self._predict_score(self.X[index]) - self.y[index]  # noqa
 
-    while True:
-        for i in range(n_samples):
-            for j in range(i + 1, n_samples):
-                i_sample = train_data_alphas[i]
-                j_sample = train_data_alphas[j]
+    def _get_random_j(
+            self,
+            i: int
+    ) -> int:
+        j = i
+        while j == i:
+            j = random.randint(0, self.m - 1)
+        return j
 
-                alpha_1, y1 = i_sample[-1], i_sample[-2]
-                alpha_2, y2 = j_sample[-1], j_sample[-2]
+    def _calc_bounds(
+            self,
+            i: int,
+            j: int
+    ) -> tuple[float, float]:
+        if self.y[i] != self.y[j]:
+            L = max(0.0, self.alphas[j] - self.alphas[i])
+            H = min(self.C, self.C + self.alphas[j] - self.alphas[i])
+        else:
+            L = max(0.0, self.alphas[i] + self.alphas[j] - self.C)
+            H = min(self.C, self.alphas[i] + self.alphas[j])
+        return L, H
 
-                const = _find_const(
-                    train_data=train_data_alphas,
-                    n_samples=n_samples,
-                    except_i=i,
-                    except_j=j,
-                )
+    def _optimize_pair(
+            self,
+            i: int,
+            j: int
+    ) -> bool:
+        E_i = self._calc_error(i)
+        E_j = self._calc_error(j)
 
-                alpha_1 = y1 * (const - alpha_2 * y2)
-                train_data_alphas[i][-1] = alpha_1
+        alpha_i_old = self.alphas[i]
+        alpha_j_old = self.alphas[j]
 
-                a, b = _find_a_and_b(
-                    train_data=train_data_alphas,
-                    n_samples=n_samples,
-                    except_i=j,
-                    gamma=gamma,
-                )
-                new_alpha_2 = _find_parabola_extremum(a, b)
+        L, H = self._calc_bounds(i, j)
+        if L == H:
+            return False
 
-                train_data_alphas[j][-1] = new_alpha_2
+        eta = (2 * self.kernel(self.X[i], self.X[j]) -
+               self.kernel(self.X[i], self.X[i]) -
+               self.kernel(self.X[j], self.X[j]))
 
-                const = _find_const(
-                    train_data=train_data_alphas,
-                    n_samples=n_samples,
-                    except_i=i,
-                    except_j=j,
-                )
+        if eta >= 0:
+            return False
 
-                alpha_2 = y2 * (const - alpha_1 * y1)
-                train_data_alphas[j][-1] = alpha_2
+        self.alphas[j] -= self.y[j] * (E_i - E_j) / eta
 
-                a, b = _find_a_and_b(
-                    train_data=train_data_alphas,
-                    n_samples=n_samples,
-                    except_i=j,
-                    gamma=gamma,
-                )
-                new_alpha_1 = _find_parabola_extremum(a, b)
+        if self.alphas[j] > H:
+            self.alphas[j] = H
+        elif self.alphas[j] < L:
+            self.alphas[j] = L
 
-                train_data_alphas[i][-1] = new_alpha_1
+        if abs(self.alphas[j] - alpha_j_old) < 1e-5:
+            return False
 
-    return train_data_alphas[:, -1]
+        self.alphas[i] += self.y[i] * self.y[j] * (alpha_j_old - self.alphas[j])
 
+        b1 = (self.b - E_i -
+              self.y[i] * (self.alphas[i] - alpha_i_old) * self.kernel(self.X[i], self.X[i]) -
+              self.y[j] * (self.alphas[j] - alpha_j_old) * self.kernel(self.X[i], self.X[j]))
 
-def _find_const(
-        train_data: np.ndarray,
-        n_samples: int,
-        except_i,
-        except_j
-) -> float:
-    const = 0.0
-    for k in range(n_samples):
-        if k in (except_i, except_j):
-            continue
+        b2 = (self.b - E_j -
+              self.y[i] * (self.alphas[i] - alpha_i_old) * self.kernel(self.X[i], self.X[j]) -
+              self.y[j] * (self.alphas[j] - alpha_j_old) * self.kernel(self.X[j], self.X[j]))
 
-        k_sample = train_data[k]
-        alpha, y = k_sample[-1], k_sample[-2]
-        const += alpha * y
+        if 0 < self.alphas[i] < self.C:
+            self.b = b1
+        elif 0 < self.alphas[j] < self.C:
+            self.b = b2
+        else:
+            self.b = (b1 + b2) / 2.0
 
-    return const
+        return True
 
+    def fit(
+            self,
+            X: np.ndarray,
+            y: np.ndarray
+    ) -> np.ndarray:
+        self.X = X
+        self.y = y
+        self.m, self.n = X.shape
+        self.alphas = np.zeros(self.m)
+        self.b = 0.0
 
-def _find_a_and_b(
-        train_data: np.ndarray,
-        n_samples: int,
-        except_i: int,
-        gamma: float,
-) -> tuple[float, float]:
-    a = 0.
-    b = 0.
+        passes = 0
+        while passes < self.max_passes:
+            num_changed_alphas = 0
+            for i in range(self.m):
+                E_i = self._calc_error(i)
 
-    for k in range(n_samples):
-        if k == except_i:
-            continue
+                if ((self.y[i] * E_i < -self.tol and self.alphas[i] < self.C) or
+                        (self.y[i] * E_i > self.tol and self.alphas[i] > 0)):
 
-        k_sample = train_data[k]
-        alpha_1, y_1 = k_sample[-1], k_sample[-2]
-        b += alpha_1
+                    j = self._get_random_j(i)
+                    if self._optimize_pair(i, j):
+                        num_changed_alphas += 1
 
-        for l in range(n_samples):
-            l_sample = train_data[l]
-            alpha_2, y_2 = l_sample[-1], l_sample[-2]
+            if num_changed_alphas == 0:
+                passes += 1
+            else:
+                passes = 0
 
-            l_sample_features = l_sample[:-2]
-            k_sample_features = k_sample[:-2]
-            a += (alpha_1 * alpha_2 * y_1 * y_2 *
-                  np.e ** (-1 * gamma * (np.linalg.norm(k_sample_features - l_sample_features) ** 2)))
-
-    return a, b
-
-
-def _find_parabola_extremum(
-        a: float,
-        b: float
-):
-    parabolic_function = get_parabolic_function(a, b)
-    start_guess = 1.0
-    alpha_zero = fsolve(parabolic_function, start_guess)
-    return alpha_zero[0]
+        return self.alphas
