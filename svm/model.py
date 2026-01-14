@@ -44,12 +44,12 @@ class SVMModel:
             self,
             u: np.ndarray
     ) -> int:
-        if not all((self._X, self._y, self._alphas, self._b is not None)):
+        if not self.__is_model_fitted():
             raise ValueError("You can't predict the unfitted model")
 
-        prediction: float = 0
+        prediction: float = self._b
         for i in range(self._m):
-            prediction += self._alphas[i] * self._y[i] * self.__smo.kernel(self._X[i], u) + self._b
+            prediction += self._alphas[i] * self._y[i] * self.__smo.kernel(self._X[i], u)
 
         return 1 if prediction > 0 else -1
 
@@ -64,8 +64,16 @@ class SVMModel:
         for k in sv_indices:
             prediction_part = 0
             for i in range(self._m):
-                prediction_part += self._alphas[i] * self._y[i] * self.__smo.kernel(self._X[i], self._X[sv_indices[k]])
+                prediction_part += self._alphas[i] * self._y[i] * self.__smo.kernel(self._X[i], self._X[k])
 
             b_sum += (self._y[k] - prediction_part)
 
         self._b = b_sum / len(sv_indices)
+
+    def __is_model_fitted(self):
+        return all((
+            self._X is not None,
+            self._y is not None,
+            self._alphas is not None,
+            self._b is not None
+        ))
