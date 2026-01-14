@@ -1,6 +1,7 @@
 from pandas import read_csv
 import numpy as np
 
+from scaling.standard_scaling import standard_scale
 from svm.model import SVMModel
 
 data = read_csv("../iris.csv")
@@ -14,13 +15,19 @@ svm = SVMModel(
 data = np.array(data.values)
 virginica_mask = np.all(data != 'virginica', axis=1)
 data_without_virginica = data[virginica_mask]
-
 np.random.shuffle(data_without_virginica)
 
-training_data = data_without_virginica[:-5]
-unseen_data = data_without_virginica[-5:]
+X = data_without_virginica[:, :-1]
+y = data_without_virginica[:, 4]
 
-_, indices = np.unique(training_data[:, 4], return_inverse=True)
+scaled_data = standard_scale(X)
+
+training_X = scaled_data[:-5]
+training_y = y[:-5]
+unseen_X = scaled_data[-5:]
+unseen_y = y[-5:]
+
+_, indices = np.unique(training_y, return_inverse=True)
 correct_answers = []
 
 for i in indices:
@@ -28,12 +35,12 @@ for i in indices:
     correct_answers.append(y)
 
 svm.fit(
-    X=training_data[:, :-1],
+    X=training_X,
     y=np.array(correct_answers),
 )
 
-for case in unseen_data:
+for i in range(len(unseen_y)):
     print(
-        svm.predict(case[:-1]),
-        case[-1]
+        svm.predict(unseen_X[i]),
+        unseen_y[i]
     )
