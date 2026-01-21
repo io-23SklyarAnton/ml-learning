@@ -22,7 +22,8 @@ scaled_training_X = standard_scaler.fit_transform(training_X)
 
 k_nearest_model = KNearest(
     k=3,
-    training_data=np.hstack((scaled_training_X, training_y))
+    X=scaled_training_X,
+    y=training_y
 )
 
 scaled_unseen_X = standard_scaler.transform(unseen_X)

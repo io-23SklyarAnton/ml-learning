@@ -5,35 +5,31 @@ class KNearest:
     def __init__(
             self,
             k: int,
-            training_data: np.ndarray,
+            X: np.ndarray,
+            y: np.ndarray
     ):
         self._k = k
-        self._training_data = training_data
-        self._n = len(self._training_data[0])
+        self._X = X.astype(float)
+
+        self._y = y
 
     def find(
             self,
-            x: np.ndarray,
+            x: np.ndarray
     ):
-        euclidean_distances: list = []
+        deltas = self._X - x
 
-        for sample in self._training_data:
-            distance: float = 0
-            for i in range(self._n - 1):
-                distance += (sample[i] - x[i]) ** 2
+        distances_sq = np.sum(deltas ** 2, axis=1)
 
-            distance = np.sqrt(distance)
+        distances = np.sqrt(distances_sq)
 
-            euclidean_distances.append([distance, sample[-1]])
+        sorted_indices = np.argsort(distances)
 
-        np_euclidean_distances = np.array(euclidean_distances)
-        sorted_indices = np.argsort(np_euclidean_distances[:, 0])
-        np_euclidean_distances_sorted = np_euclidean_distances[sorted_indices]
+        k_indices = sorted_indices[:self._k]
 
-        k_nearest = np_euclidean_distances_sorted[:self._k + 1]
+        k_nearest_labels = self._y[k_indices]
 
-        unique_strings, counts = np.unique(k_nearest[:, 1], return_counts=True)
+        unique_labels, counts = np.unique(k_nearest_labels, return_counts=True)
         max_index = np.argmax(counts)
-        most_frequent_sample = unique_strings[max_index]
 
-        return most_frequent_sample
+        return unique_labels[max_index]
