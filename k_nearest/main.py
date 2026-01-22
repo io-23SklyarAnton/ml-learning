@@ -2,7 +2,7 @@ from pandas import read_csv
 import numpy as np
 
 from scaling.standard_scaling import StandardScaler
-from k_nearest.find_nearest_neighbor import KNearest
+from k_nearest.model import KNearest
 
 data = read_csv("../iris.csv")
 
