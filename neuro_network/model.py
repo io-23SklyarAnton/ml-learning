@@ -79,7 +79,7 @@ class NeuroNetwork:
             W: np.ndarray[np.float64],
             x: np.ndarray[np.float64],
             b: np.ndarray[np.float64],
-    ) -> tuple[np.ndarray[np.float64], np.ndarray[np.float64]]:
+    ) -> np.ndarray[np.float64]:
         return self._sigmoid(
             (W @ x) + b
         )
