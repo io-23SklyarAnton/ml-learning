@@ -16,6 +16,7 @@ class NeuroNetwork:
         self._layers = layers
         self._nu = nu
         self.__init_weights(layers)
+        self.__init_biases(layers)
 
     def _sigmoid(
             self,
@@ -27,13 +28,24 @@ class NeuroNetwork:
             self,
             layers: list[Layer],
     ) -> None:
-        pass
+        self._weights = []
+        for i in range(len(layers) - 1):
+            layer = layers[i]
+            next_layer = layers[i + 1]
+            size = (next_layer.n_neurons, layer.n_neurons)
+
+            self._weights.append(np.random.normal(loc=0.0, scale=1.0, size=size))
 
     def __init_biases(
             self,
             layers: list[Layer],
     ) -> None:
-        pass
+        self._biases = []
+        for i in range(len(layers) - 1):
+            next_layer = layers[i + 1]
+            size = (next_layer.n_neurons, 1)
+
+            self._weights.append(np.random.normal(loc=0.0, scale=1.0, size=size))
 
     def fit(
             self,
