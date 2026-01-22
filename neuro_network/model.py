@@ -51,7 +51,7 @@ class NeuroNetwork:
             self,
             X: np.ndarray[np.float64],
             Y: np.ndarray[np.float64],
-    ) -> np.ndarray[np.float64]:
+    ) -> None:
         for i_sample in range(len(Y)):
             x = X[i_sample]
             y = Y[i_sample]
