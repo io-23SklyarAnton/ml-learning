@@ -97,7 +97,7 @@ class NeuralNetwork:
         for layer_idx in range(len(self._weights)):
             a = self._forward_pass(
                 W=self._weights[layer_idx],
-                x=x,
+                x=activations[-1],
                 b=self._biases[layer_idx],
             )
             activations.append(a)
