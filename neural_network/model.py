@@ -34,7 +34,7 @@ class NeuralNetwork:
             next_layer = layer_sizes[i + 1]
             size = (next_layer.n_neurons, current_layer_size.n_neurons)
 
-            self._weights.append(np.random.normal(loc=0.0, scale=1.0, size=size))
+            self._weights.append(np.random.normal(loc=0.0, scale=0.1, size=size))
 
     def _init_biases(
             self,
@@ -45,7 +45,7 @@ class NeuralNetwork:
             next_layer = layer_sizes[i + 1]
             size = (next_layer.n_neurons, 1)
 
-            self._biases.append(np.random.normal(loc=0.0, scale=1.0, size=size))
+            self._biases.append(np.random.normal(loc=0.0, scale=0.1, size=size))
 
     def fit(
             self,
