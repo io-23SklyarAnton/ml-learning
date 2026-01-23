@@ -83,11 +83,14 @@ class NeuralNetwork:
             Y: np.ndarray[np.float64],
             i_sample: int,
     ):
-        x = X[i_sample]
-        y = Y[i_sample]
+        x = X[i_sample].reshape(-1, 1)
+        y = Y[i_sample].reshape(-1, 1)
         activations = self._get_activations(x)
 
-        deltas = self._get_deltas(activations=activations, y=y)
+        deltas = self._get_deltas(
+            activations=activations,
+            y=y
+        )
 
         self._update_weights(
             activations=activations,
@@ -118,9 +121,10 @@ class NeuralNetwork:
         deltas = [
             (activations[-1] - y) * activations[-1] * (1 - activations[-1])
         ]
-        for layer_idx in range(len(self._layer_sizes) - 2, -1, -1):
+        for layer_idx in range(len(self._weights) - 1, 0, -1):
             sigmoid_prime = activations[layer_idx] * (1 - activations[layer_idx])
-            delta = (self._weights[layer_idx + 1].T @ deltas[-1]) * sigmoid_prime
+
+            delta = (self._weights[layer_idx].T @ deltas[-1]) * sigmoid_prime
             deltas.append(delta)
 
         return deltas
