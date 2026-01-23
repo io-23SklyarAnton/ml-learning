@@ -51,40 +51,97 @@ class NeuroNetwork:
             self,
             X: np.ndarray[np.float64],
             Y: np.ndarray[np.float64],
+            epoch: int,
+    ) -> None:
+        for _ in range(epoch):
+            self._process_epoch(
+                X=X,
+                Y=Y,
+            )
+
+    def _process_epoch(
+            self,
+            X: np.ndarray[np.float64],
+            Y: np.ndarray[np.float64],
     ) -> None:
         for i_sample in range(len(Y)):
-            x = X[i_sample]
-            y = Y[i_sample]
-            a_s = [x]
+            self._process_sample(
+                X=X,
+                Y=Y,
+                i_sample=i_sample,
+            )
 
-            for l in range(len(self._layers)):
-                a = self._forward_pass(
-                    W=self._weights[l],
-                    x=x,
-                    b=self._biases[l],
-                )
-                a_s.append(a)
+    def _process_sample(
+            self,
+            X: np.ndarray[np.float64],
+            Y: np.ndarray[np.float64],
+            i_sample: int,
+    ):
+        x = X[i_sample]
+        y = Y[i_sample]
+        a_history = self._get_a_history(x)
 
-            deltas = [
-                (a_s[-1] - y) * a_s[-1] * (1 - a_s[-1])
-            ]
-            for l in range(len(self._layers) - 2, -1, -1):
-                d_sigma = a_s[l] * (1 - a_s[l])
-                delta = (self._weights[l + 1].T @ deltas[-1]) * d_sigma
-                deltas.append(delta)
+        deltas = self._get_deltas(a_history=a_history, y=y)
 
-            for i in range(len(deltas)):
-                delta = deltas[i]
-                reverse_index = -1 * (i + 1)
+        self._update_weights(
+            a_history=a_history,
+            deltas=deltas,
+        )
 
-                a = a_s[reverse_index - 1]
-                W = self._weights[reverse_index]
-                b = self._biases[reverse_index]
+    def _get_a_history(
+            self,
+            x: np.ndarray[np.float64],
+    ) -> list[np.ndarray[np.float64]]:
+        a_history = [x]
 
-                d_w = delta @ a.T
+        for l in range(len(self._layers)):
+            a = self._forward_pass(
+                W=self._weights[l],
+                x=x,
+                b=self._biases[l],
+            )
+            a_history.append(a)
 
-                self._weights[reverse_index] = W - self._nu * d_w
-                self._biases[reverse_index] = b - self._nu * delta
+        return a_history
+
+    def _get_deltas(
+            self,
+            a_history: list[np.ndarray[np.float64]],
+            y: np.ndarray[np.float64]
+    ) -> list[np.ndarray[np.float64]]:
+        deltas = [
+            (a_history[-1] - y) * a_history[-1] * (1 - a_history[-1])
+        ]
+        for l in range(len(self._layers) - 2, -1, -1):
+            d_sigma = a_history[l] * (1 - a_history[l])
+            delta = (self._weights[l + 1].T @ deltas[-1]) * d_sigma
+            deltas.append(delta)
+
+        return deltas
+
+    def _update_weights(
+            self,
+            a_history: list[np.ndarray[np.float64]],
+            deltas: list[np.ndarray[np.float64]],
+    ):
+        for i in range(len(deltas)):
+            delta = deltas[i]
+            reverse_index = -1 * (i + 1)
+
+            a = a_history[reverse_index - 1]
+            W = self._weights[reverse_index]
+            b = self._biases[reverse_index]
+
+            d_w = delta @ a.T
+
+            self._weights[reverse_index] = W - self._nu * d_w
+            self._biases[reverse_index] = b - self._nu * delta
+
+    def predict(
+            self,
+            x: np.ndarray[np.float64],
+    ):
+        pass
 
     def _forward_pass(
             self,
