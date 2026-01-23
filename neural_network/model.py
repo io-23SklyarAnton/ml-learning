@@ -59,6 +59,12 @@ class NeuralNetwork:
                 Y=Y,
             )
 
+    def predict(
+            self,
+            x: np.ndarray[np.float64],
+    ) -> np.ndarray[np.float64]:
+        return self._get_activations(x)[-1]
+
     def _process_epoch(
             self,
             X: np.ndarray[np.float64],
@@ -136,12 +142,6 @@ class NeuralNetwork:
 
             self._weights[layer_idx] = W - self._learning_rate * d_w
             self._biases[layer_idx] = b - self._learning_rate * delta
-
-    def predict(
-            self,
-            x: np.ndarray[np.float64],
-    ):
-        pass
 
     def _forward_pass(
             self,
