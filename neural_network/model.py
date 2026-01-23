@@ -63,7 +63,8 @@ class NeuralNetwork:
             self,
             x: np.ndarray[np.float64],
     ) -> np.ndarray[np.float64]:
-        return self._get_activations(x)[-1]
+        x_reshaped = x.reshape(-1, 1)
+        return self._get_activations(x_reshaped)[-1]
 
     def _process_epoch(
             self,
