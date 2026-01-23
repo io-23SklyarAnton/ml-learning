@@ -3,57 +3,57 @@ import numpy as np
 
 
 @dataclasses.dataclass
-class Layer:
+class LayerSize:
     n_neurons: int
 
 
-class NeuroNetwork:
+class NeuralNetwork:
     def __init__(
             self,
-            layers: list[Layer],
-            nu: float,
+            layer_sizes: list[LayerSize],
+            learning_rate: float,
     ):
-        self._layers = layers
-        self._nu = nu
-        self.__init_weights(layers)
-        self.__init_biases(layers)
+        self._layer_sizes = layer_sizes
+        self._learning_rate = learning_rate
+        self._init_weights(layer_sizes)
+        self._init_biases(layer_sizes)
 
     def _sigmoid(
             self,
-            input_: np.ndarray[np.float64]
+            z: np.ndarray[np.float64]
     ) -> np.ndarray[np.float64]:
-        return 1 / (1 + np.exp(-1 * input_))
+        return 1 / (1 + np.exp(-1 * z))
 
-    def __init_weights(
+    def _init_weights(
             self,
-            layers: list[Layer],
+            layer_sizes: list[LayerSize],
     ) -> None:
         self._weights = []
-        for i in range(len(layers) - 1):
-            layer = layers[i]
-            next_layer = layers[i + 1]
-            size = (next_layer.n_neurons, layer.n_neurons)
+        for i in range(len(layer_sizes) - 1):
+            current_layer_size = layer_sizes[i]
+            next_layer = layer_sizes[i + 1]
+            size = (next_layer.n_neurons, current_layer_size.n_neurons)
 
             self._weights.append(np.random.normal(loc=0.0, scale=1.0, size=size))
 
-    def __init_biases(
+    def _init_biases(
             self,
-            layers: list[Layer],
+            layer_sizes: list[LayerSize],
     ) -> None:
         self._biases = []
-        for i in range(len(layers) - 1):
-            next_layer = layers[i + 1]
+        for i in range(len(layer_sizes) - 1):
+            next_layer = layer_sizes[i + 1]
             size = (next_layer.n_neurons, 1)
 
-            self._weights.append(np.random.normal(loc=0.0, scale=1.0, size=size))
+            self._biases.append(np.random.normal(loc=0.0, scale=1.0, size=size))
 
     def fit(
             self,
             X: np.ndarray[np.float64],
             Y: np.ndarray[np.float64],
-            epoch: int,
+            n_epochs: int,
     ) -> None:
-        for _ in range(epoch):
+        for _ in range(n_epochs):
             self._process_epoch(
                 X=X,
                 Y=Y,
@@ -79,63 +79,63 @@ class NeuroNetwork:
     ):
         x = X[i_sample]
         y = Y[i_sample]
-        a_history = self._get_a_history(x)
+        activations = self._get_activations(x)
 
-        deltas = self._get_deltas(a_history=a_history, y=y)
+        deltas = self._get_deltas(activations=activations, y=y)
 
         self._update_weights(
-            a_history=a_history,
+            activations=activations,
             deltas=deltas,
         )
 
-    def _get_a_history(
+    def _get_activations(
             self,
             x: np.ndarray[np.float64],
     ) -> list[np.ndarray[np.float64]]:
-        a_history = [x]
+        activations = [x]
 
-        for l in range(len(self._layers)):
+        for layer_idx in range(len(self._weights)):
             a = self._forward_pass(
-                W=self._weights[l],
+                W=self._weights[layer_idx],
                 x=x,
-                b=self._biases[l],
+                b=self._biases[layer_idx],
             )
-            a_history.append(a)
+            activations.append(a)
 
-        return a_history
+        return activations
 
     def _get_deltas(
             self,
-            a_history: list[np.ndarray[np.float64]],
+            activations: list[np.ndarray[np.float64]],
             y: np.ndarray[np.float64]
     ) -> list[np.ndarray[np.float64]]:
         deltas = [
-            (a_history[-1] - y) * a_history[-1] * (1 - a_history[-1])
+            (activations[-1] - y) * activations[-1] * (1 - activations[-1])
         ]
-        for l in range(len(self._layers) - 2, -1, -1):
-            d_sigma = a_history[l] * (1 - a_history[l])
-            delta = (self._weights[l + 1].T @ deltas[-1]) * d_sigma
+        for layer_idx in range(len(self._layer_sizes) - 2, -1, -1):
+            sigmoid_prime = activations[layer_idx] * (1 - activations[layer_idx])
+            delta = (self._weights[layer_idx + 1].T @ deltas[-1]) * sigmoid_prime
             deltas.append(delta)
 
         return deltas
 
     def _update_weights(
             self,
-            a_history: list[np.ndarray[np.float64]],
+            activations: list[np.ndarray[np.float64]],
             deltas: list[np.ndarray[np.float64]],
     ):
         for i in range(len(deltas)):
             delta = deltas[i]
-            reverse_index = -1 * (i + 1)
+            layer_idx = -1 * (i + 1)
 
-            a = a_history[reverse_index - 1]
-            W = self._weights[reverse_index]
-            b = self._biases[reverse_index]
+            a = activations[layer_idx - 1]
+            W = self._weights[layer_idx]
+            b = self._biases[layer_idx]
 
             d_w = delta @ a.T
 
-            self._weights[reverse_index] = W - self._nu * d_w
-            self._biases[reverse_index] = b - self._nu * delta
+            self._weights[layer_idx] = W - self._learning_rate * d_w
+            self._biases[layer_idx] = b - self._learning_rate * delta
 
     def predict(
             self,
