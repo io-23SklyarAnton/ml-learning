@@ -80,7 +80,21 @@ class NeuralNetwork:
             next_layer = layer_sizes[i + 1]
             size = (next_layer.n_neurons, current_layer_size.n_neurons)
 
-            self._weights.append(np.random.normal(loc=0.0, scale=0.1, size=size))
+            scale: float = self._calculate_scale(current_layer_size.n_neurons)
+
+            self._weights.append(np.random.normal(loc=0.0, scale=scale, size=size))
+
+    def _calculate_scale(
+            self,
+            layer_size: int
+    ) -> float:
+        match self._activation_function:
+            case ActivationFunction.SIGMOID:
+                return 0.1
+            case ActivationFunction.RELU:
+                return np.sqrt(2 / layer_size)
+            case _:
+                raise NotImplemented()
 
     def _init_biases(
             self,
@@ -91,7 +105,9 @@ class NeuralNetwork:
             next_layer = layer_sizes[i + 1]
             size = (next_layer.n_neurons, 1)
 
-            self._biases.append(np.random.normal(loc=0.0, scale=0.1, size=size))
+            scale: float = self._calculate_scale(next_layer.n_neurons)
+
+            self._biases.append(np.random.normal(loc=0.0, scale=scale, size=size))
 
     def fit(
             self,
