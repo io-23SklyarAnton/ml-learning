@@ -2,6 +2,7 @@ import dataclasses
 
 import numpy as np
 
+from neural_network.activation_functions import ActivationFunction
 from neural_network.optimizers import Optimizer, OptimizerFactory
 
 
@@ -13,12 +14,15 @@ class LayerSize:
 class NeuralNetwork:
     def __init__(
             self,
+            activation_function: ActivationFunction,
             layer_sizes: list[LayerSize],
-            optimizer_factory: OptimizerFactory,
             learning_rate: float,
+            optimizer_factory: OptimizerFactory,
     ):
         self._layer_sizes = layer_sizes
         self._learning_rate = learning_rate
+        self._activation_function = activation_function
+
         self._init_weights(layer_sizes)
         self._init_biases(layer_sizes)
         self._weight_optimizers: list[Optimizer] = [
@@ -35,6 +39,36 @@ class NeuralNetwork:
             z: np.ndarray[np.float64]
     ) -> np.ndarray[np.float64]:
         return 1 / (1 + np.exp(-1 * z))
+
+    def _sigmoid_derivative(
+            self,
+            z: np.ndarray[np.float64]
+    ) -> np.ndarray[np.float64]:
+        return z * (1 - z)
+
+    def _relu(
+            self,
+            z: np.ndarray[np.float64]
+    ) -> np.ndarray[np.float64]:
+        return np.maximum(0, z)
+
+    def _relu_derivative(
+            self,
+            z: np.ndarray[np.float64]
+    ) -> np.ndarray[np.float64]:
+        return (z > 0).astype(float)
+
+    def _get_derivative(
+            self,
+            z: np.ndarray[np.float64]
+    ) -> np.ndarray[np.float64]:
+        match self._activation_function:
+            case ActivationFunction.SIGMOID:
+                return self._sigmoid_derivative(z)
+            case ActivationFunction.RELU:
+                return self._relu_derivative(z)
+            case _:
+                raise NotImplemented()
 
     def _init_weights(
             self,
@@ -132,10 +166,10 @@ class NeuralNetwork:
             y: np.ndarray[np.float64]
     ) -> list[np.ndarray[np.float64]]:
         deltas = [
-            (activations[-1] - y) * activations[-1] * (1 - activations[-1])
+            (activations[-1] - y) * self._get_derivative(activations[-1])
         ]
         for layer_idx in range(len(self._weights) - 1, 0, -1):
-            sigmoid_prime = activations[layer_idx] * (1 - activations[layer_idx])
+            sigmoid_prime = self._get_derivative(activations[layer_idx])
 
             delta = (self._weights[layer_idx].T @ deltas[-1]) * sigmoid_prime
             deltas.append(delta)
@@ -168,6 +202,11 @@ class NeuralNetwork:
             x: np.ndarray[np.float64],
             b: np.ndarray[np.float64],
     ) -> np.ndarray[np.float64]:
-        return self._sigmoid(
-            (W @ x) + b
-        )
+        z = (W @ x) + b
+        match self._activation_function:
+            case ActivationFunction.RELU:
+                return self._relu(z)
+            case ActivationFunction.SIGMOID:
+                return self._sigmoid(z)
+            case _:
+                raise NotImplemented()
