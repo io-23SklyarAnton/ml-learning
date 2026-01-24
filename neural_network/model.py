@@ -1,5 +1,8 @@
 import dataclasses
+
 import numpy as np
+
+from neural_network.optimizers import Optimizer, OptimizerFactory
 
 
 @dataclasses.dataclass
@@ -11,12 +14,21 @@ class NeuralNetwork:
     def __init__(
             self,
             layer_sizes: list[LayerSize],
+            optimizer_factory: OptimizerFactory,
             learning_rate: float,
     ):
         self._layer_sizes = layer_sizes
         self._learning_rate = learning_rate
         self._init_weights(layer_sizes)
         self._init_biases(layer_sizes)
+        self._weight_optimizers: list[Optimizer] = [
+            optimizer_factory.create_optimizer()
+            for _ in range(len(self._weights))
+        ]
+        self._bias_optimizers: list[Optimizer] = [
+            optimizer_factory.create_optimizer()
+            for _ in range(len(self._weights))
+        ]
 
     def _sigmoid(
             self,
@@ -142,11 +154,13 @@ class NeuralNetwork:
             a = activations[layer_idx - 1]
             W = self._weights[layer_idx]
             b = self._biases[layer_idx]
+            w_optimizer = self._weight_optimizers[layer_idx]
+            b_optimizer = self._bias_optimizers[layer_idx]
 
             d_w = delta @ a.T
 
-            self._weights[layer_idx] = W - self._learning_rate * d_w
-            self._biases[layer_idx] = b - self._learning_rate * delta
+            self._weights[layer_idx] = W - self._learning_rate * w_optimizer.compute_step(d_w)
+            self._biases[layer_idx] = b - self._learning_rate * b_optimizer.compute_step(delta)
 
     def _forward_pass(
             self,

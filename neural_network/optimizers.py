@@ -1,0 +1,60 @@
+import abc
+
+import numpy as np
+
+
+class Optimizer(abc.ABC):
+    @abc.abstractmethod
+    def compute_step(self, d_w: np.ndarray[np.float64]) -> np.ndarray[np.float64]: ...
+
+
+class OptimizerFactory(abc.ABC):
+    def create_optimizer(self) -> Optimizer: ...
+
+
+class Adam(Optimizer):
+    def __init__(
+            self,
+            p1: float,
+            p2: float,
+            epsilon: float
+    ):
+        self._p1 = p1
+        self._p2 = p2
+        self._epsilon = epsilon
+        self._p = 0
+        self._r = 0
+        self._t = 1
+
+    def compute_step(
+            self,
+            d_w: np.ndarray[np.float64]
+    ) -> np.ndarray[np.float64]:
+        self._p = self._p1 * self._p + (1 - self._p1) * d_w
+        p_hat = self._p / (1 - self._p1 ** self._t)
+
+        self._r = self._p2 * self._r + (1 - self._p2) * (d_w ** 2)
+        r_hat = self._r / (1 - self._p2 ** self._t)
+
+        self._t += 1
+
+        return p_hat / (self._epsilon + np.sqrt(r_hat))
+
+
+class AdamFactory(OptimizerFactory):
+    def __init__(
+            self,
+            p1: float,
+            p2: float,
+            epsilon: float
+    ):
+        self._p1 = p1
+        self._p2 = p2
+        self._epsilon = epsilon
+
+    def create_optimizer(self) -> Optimizer:
+        return Adam(
+            p1=self._p1,
+            p2=self._p2,
+            epsilon=self._epsilon
+        )

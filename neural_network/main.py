@@ -2,6 +2,7 @@ from pandas import read_csv
 import numpy as np
 
 from neural_network.model import NeuralNetwork, LayerSize
+from neural_network.optimizers import AdamFactory
 from scaling.standard_scaling import StandardScaler
 
 data = read_csv("../iris.csv")
@@ -11,9 +12,15 @@ layer_sizes = [
     LayerSize(n_neurons=10),
     LayerSize(n_neurons=3)
 ]
+optimizer_factory = AdamFactory(
+    p1=0.9,
+    p2=0.999,
+    epsilon=1e-8
+)
 model = NeuralNetwork(
     layer_sizes=layer_sizes,
     learning_rate=0.05,
+    optimizer_factory=optimizer_factory,
 )
 data = np.array(data.values)
 np.random.shuffle(data)
