@@ -151,10 +151,13 @@ class NeuralNetwork:
         activations = [x]
 
         for layer_idx in range(len(self._weights)):
+            is_output_layer = layer_idx == len(self._weights) - 1
+
             a = self._forward_pass(
                 W=self._weights[layer_idx],
                 x=activations[-1],
                 b=self._biases[layer_idx],
+                is_output_layer=is_output_layer
             )
             activations.append(a)
 
@@ -166,12 +169,12 @@ class NeuralNetwork:
             y: np.ndarray[np.float64]
     ) -> list[np.ndarray[np.float64]]:
         deltas = [
-            (activations[-1] - y) * self._get_derivative(activations[-1])
+            (activations[-1] - y) * self._sigmoid_derivative(activations[-1])
         ]
         for layer_idx in range(len(self._weights) - 1, 0, -1):
-            sigmoid_prime = self._get_derivative(activations[layer_idx])
+            derivative = self._get_derivative(activations[layer_idx])
 
-            delta = (self._weights[layer_idx].T @ deltas[-1]) * sigmoid_prime
+            delta = (self._weights[layer_idx].T @ deltas[-1]) * derivative
             deltas.append(delta)
 
         return deltas
@@ -201,8 +204,13 @@ class NeuralNetwork:
             W: np.ndarray[np.float64],
             x: np.ndarray[np.float64],
             b: np.ndarray[np.float64],
+            is_output_layer: bool,
     ) -> np.ndarray[np.float64]:
         z = (W @ x) + b
+
+        if is_output_layer:
+            return self._sigmoid(z)
+
         match self._activation_function:
             case ActivationFunction.RELU:
                 return self._relu(z)

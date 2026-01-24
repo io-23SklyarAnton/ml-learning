@@ -1,6 +1,7 @@
 from pandas import read_csv
 import numpy as np
 
+from neural_network.activation_functions import ActivationFunction
 from neural_network.model import NeuralNetwork, LayerSize
 from neural_network.optimizers import AdamFactory
 from scaling.standard_scaling import StandardScaler
@@ -18,6 +19,7 @@ optimizer_factory = AdamFactory(
     epsilon=1e-8
 )
 model = NeuralNetwork(
+    activation_function=ActivationFunction.RELU,
     layer_sizes=layer_sizes,
     learning_rate=0.05,
     optimizer_factory=optimizer_factory,
