@@ -10,7 +10,10 @@ data = read_csv("../iris.csv")
 
 layer_sizes = [
     LayerSize(n_neurons=4),
-    LayerSize(n_neurons=10),
+    LayerSize(n_neurons=50),
+    LayerSize(n_neurons=50),
+    LayerSize(n_neurons=50),
+    LayerSize(n_neurons=50),
     LayerSize(n_neurons=3)
 ]
 optimizer_factory = AdamFactory(
@@ -21,7 +24,7 @@ optimizer_factory = AdamFactory(
 model = NeuralNetwork(
     activation_function=ActivationFunction.RELU,
     layer_sizes=layer_sizes,
-    learning_rate=0.05,
+    learning_rate=0.001,
     optimizer_factory=optimizer_factory,
 )
 data = np.array(data.values)
