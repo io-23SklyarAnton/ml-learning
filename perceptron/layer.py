@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from perceptron_implementation.neuron import Neuron
+from perceptron.neuron import Neuron
 
 
 @dataclass

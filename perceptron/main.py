@@ -1,7 +1,7 @@
 from pandas import read_csv
 import numpy as np
 
-from perceptron_implementation.perceptron import Perceptron
+from perceptron.perceptron import Perceptron
 
 data = read_csv("../iris.csv")
 

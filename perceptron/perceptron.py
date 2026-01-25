@@ -1,7 +1,7 @@
 import numpy as np
 
-from perceptron_implementation.layer import Layer
-from perceptron_implementation.neuron import Neuron
+from perceptron.layer import Layer
+from perceptron.neuron import Neuron
 
 
 class Perceptron:
