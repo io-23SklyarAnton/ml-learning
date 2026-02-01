@@ -3,7 +3,7 @@ import numpy as np
 
 from neural_network.activation_functions import ActivationFunction
 from neural_network.model import NeuralNetwork, LayerSize
-from neural_network.optimizers import AdamFactory
+from optimizers import AdamFactory
 from scaling.minmax_scaling import MinMaxScaler
 
 data = read_csv('../mnist_784.csv')

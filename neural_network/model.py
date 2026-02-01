@@ -3,7 +3,7 @@ import dataclasses
 import numpy as np
 
 from neural_network.activation_functions import ActivationFunction
-from neural_network.optimizers import Optimizer, OptimizerFactory
+from optimizers import Optimizer, OptimizerFactory
 
 
 @dataclasses.dataclass

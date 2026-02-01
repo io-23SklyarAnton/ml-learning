@@ -3,7 +3,7 @@ import numpy as np
 
 from neural_network.activation_functions import ActivationFunction
 from neural_network.model import NeuralNetwork, LayerSize
-from neural_network.optimizers import AdamFactory
+from optimizers import AdamFactory
 from scaling.standard_scaling import StandardScaler
 
 data = read_csv("../iris.csv")
