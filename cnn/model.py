@@ -63,7 +63,7 @@ class Convolution:
 
         for i in range(self.out_channels):
             result = correlate(x, self._filters[i], mode='valid')
-            output[i] = result.squeeze()
+            output[i] = result[0]
 
         return output
 
