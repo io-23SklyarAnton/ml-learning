@@ -1,0 +1,145 @@
+import abc
+
+import numpy as np
+from scipy.signal import correlate, convolve
+
+from optimizers import OptimizerFactory
+
+
+class Layer(abc.ABC):
+    def forward_pass(self, x: np.ndarray[np.float64]) -> np.ndarray[np.float64]: ...
+
+    def backward_pass(self, delta: np.ndarray[np.float64]) -> np.ndarray[np.float64]: ...
+
+
+class Convolution:
+    def __init__(
+            self,
+            optimizer_factory: OptimizerFactory,
+            learning_rate: float,
+            filter_size: int,
+            in_channels: int,
+            out_channels: int
+    ) -> None:
+        self.filter_size = filter_size
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+
+        self._learning_rate = learning_rate
+
+        self._initialize_filters()
+        self._initialize_optimizers(optimizer_factory)
+        self._x = None
+
+    def _initialize_filters(self) -> None:
+        fan_in = self.filter_size * self.filter_size * self.in_channels
+        scale = np.sqrt(2.0 / fan_in)
+
+        self._filters = np.random.normal(
+            loc=0.0,
+            scale=scale,
+            size=(self.out_channels, self.in_channels, self.filter_size, self.filter_size)
+        )
+
+    def _initialize_optimizers(
+            self,
+            optimizer_factory: OptimizerFactory,
+    ) -> None:
+        self._optimizers = []
+        for _ in range(self.out_channels):
+            self._optimizers.append(
+                [optimizer_factory.create_optimizer() for _ in range(self.in_channels)]
+            )
+
+    def forward_pass(
+            self,
+            x: np.ndarray[np.float64]
+    ) -> np.ndarray[np.float64]:
+        self._x = x
+
+        h_out = x.shape[1] - self.filter_size + 1
+        w_out = x.shape[2] - self.filter_size + 1
+        output = np.zeros((self.out_channels, h_out, w_out))
+
+        for i in range(self.out_channels):
+            result = correlate(x, self._filters[i], mode='valid')
+            output[i] = result.squeeze()
+
+        return output
+
+    def backward_pass(
+            self,
+            delta: np.ndarray[np.float64],
+    ) -> np.ndarray[np.float64]:
+        d_x = np.zeros_like(self._x)
+
+        d_w = np.zeros_like(self._filters)
+
+        for i in range(self.out_channels):
+            delta_i = delta[i]
+
+            for c in range(self.in_channels):
+                d_x[c] += convolve(delta_i, self._filters[i, c], mode='full')
+
+            for c in range(self.in_channels):
+                optimizer = self._optimizers[i][c]
+                d_w[i, c] = optimizer.compute_step(correlate(self._x[c], delta_i, mode='valid'))
+
+        self._filters -= self._learning_rate * d_w
+
+        return d_x
+
+
+class MaxPooling(Layer):
+    def __init__(
+            self,
+            pool_size: int,
+            stride: int,
+    ):
+        self.pool_size = pool_size
+        self.stride = stride
+        self.cache = None
+
+    def forward_pass(
+            self,
+            x: np.ndarray[np.float64]
+    ) -> np.ndarray[np.float64]:
+        c, h, w = x.shape
+
+        h_out = ((h - self.pool_size) // self.stride + 1)
+        w_out = ((w - self.pool_size) // self.stride + 1)
+
+        h_cropped = h_out * self.pool_size
+        w_cropped = w_out * self.pool_size
+
+        if self.stride != self.pool_size:
+            raise NotImplementedError()
+
+        x_reshaped = x[:, :h_cropped, :w_cropped].reshape(
+            c, h_out, self.pool_size, w_out, self.pool_size
+        )
+
+        out = x_reshaped.max(axis=(2, 4))
+
+        self.cache = (x.shape, x_reshaped, out)
+
+        return out
+
+    def backward_pass(self, delta: np.ndarray[np.float64]) -> np.ndarray[np.float64]:
+        x_shape, x_reshaped, out = self.cache
+
+        out_expanded = out[:, :, np.newaxis, :, np.newaxis]
+
+        mask = (x_reshaped == out_expanded)
+
+        delta_expanded = delta[:, :, np.newaxis, :, np.newaxis]
+
+        d_x_reshaped = delta_expanded * mask
+
+        d_x = np.zeros(x_shape)
+
+        c, h_out, pool_h, w_out, pool_w = x_reshaped.shape
+        d_x_flat = d_x_reshaped.reshape(c, h_out * pool_h, w_out * pool_w)
+        d_x[:, :h_out * pool_h, :w_out * pool_w] = d_x_flat
+
+        return d_x
