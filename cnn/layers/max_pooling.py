@@ -7,10 +7,9 @@ class MaxPooling(Base):
     def __init__(
             self,
             pool_size: int,
-            stride: int,
     ):
         self.pool_size = pool_size
-        self.stride = stride
+        self.stride = pool_size
         self.cache = None
 
     def forward_pass(
@@ -24,9 +23,6 @@ class MaxPooling(Base):
 
         h_cropped = h_out * self.pool_size
         w_cropped = w_out * self.pool_size
-
-        if self.stride != self.pool_size:
-            raise NotImplementedError()
 
         x_reshaped = x[:, :h_cropped, :w_cropped].reshape(
             c, h_out, self.pool_size, w_out, self.pool_size
