@@ -55,15 +55,20 @@ class Convolution(Layer):
             size=(self.out_channels, self.in_channels, self.filter_size, self.filter_size)
         )
 
+        self._bias = np.zeros((self.out_channels, 1))
+
     def _initialize_optimizers(
             self,
             optimizer_factory: OptimizerFactory,
     ) -> None:
         self._optimizers = []
+        self._bias_optimizers = []
+
         for _ in range(self.out_channels):
             self._optimizers.append(
                 [optimizer_factory.create_optimizer() for _ in range(self.in_channels)]
             )
+            self._bias_optimizers.append(optimizer_factory.create_optimizer())
 
     def forward_pass(
             self,
@@ -77,7 +82,7 @@ class Convolution(Layer):
 
         for i in range(self.out_channels):
             result = correlate(x, self._filters[i], mode='valid')
-            output[i] = result[0]
+            output[i] = result[0] + self._bias[i]
 
         return output
 
@@ -86,11 +91,15 @@ class Convolution(Layer):
             delta: np.ndarray[np.float64],
     ) -> np.ndarray[np.float64]:
         d_x = np.zeros_like(self._x)
-
         d_w = np.zeros_like(self._filters)
+        d_b = np.zeros_like(self._bias)
 
         for i in range(self.out_channels):
             delta_i = delta[i]
+            raw_db = np.sum(delta_i)
+
+            step_b = self._bias_optimizers[i].compute_step(raw_db)
+            d_b[i] = step_b
 
             for c in range(self.in_channels):
                 d_x[c] += convolve(delta_i, self._filters[i, c], mode='full')
@@ -100,6 +109,7 @@ class Convolution(Layer):
                 d_w[i, c] = optimizer.compute_step(correlate(self._x[c], delta_i, mode='valid'))
 
         self._filters -= self._learning_rate * d_w
+        self._bias -= self._learning_rate * d_b
 
         return d_x
 
