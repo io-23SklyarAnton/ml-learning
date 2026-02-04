@@ -12,7 +12,21 @@ class Layer(abc.ABC):
     def backward_pass(self, delta: np.ndarray[np.float64]) -> np.ndarray[np.float64]: ...
 
 
-class Convolution:
+class ReLU(Layer):
+    def __init__(self):
+        self.cache = None
+
+    def forward_pass(self, x: np.ndarray) -> np.ndarray:
+        self.cache = x
+        return np.maximum(0, x)
+
+    def backward_pass(self, delta: np.ndarray) -> np.ndarray:
+        z = self.cache
+        d_z = delta * (z > 0).astype(float)
+        return d_z
+
+
+class Convolution(Layer):
     def __init__(
             self,
             optimizer_factory: OptimizerFactory,
@@ -143,3 +157,7 @@ class MaxPooling(Layer):
         d_x[:, :h_out * pool_h, :w_out * pool_w] = d_x_flat
 
         return d_x
+
+
+class FullyConnectedLayer(Layer):
+    pass
