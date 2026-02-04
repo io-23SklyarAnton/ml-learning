@@ -1,11 +1,11 @@
 import numpy as np
 from scipy.signal import correlate, convolve
 
-from cnn.layers.base import Layer
+from cnn.layers.base import Base
 from optimizers import OptimizerFactory
 
 
-class Convolution(Layer):
+class Convolution(Base):
     def __init__(
             self,
             optimizer_factory: OptimizerFactory,

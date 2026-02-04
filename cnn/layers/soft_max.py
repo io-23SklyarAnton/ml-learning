@@ -1,9 +1,9 @@
 import numpy as np
 
-from cnn.layers.base import Layer
+from cnn.layers.base import Base
 
 
-class Softmax(Layer):
+class Softmax(Base):
     def __init__(self):
         self.cache = None
 

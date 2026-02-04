@@ -1,9 +1,9 @@
 import numpy as np
 
-from cnn.layers.base import Layer
+from cnn.layers.base import Base
 
 
-class ReLU(Layer):
+class ReLU(Base):
     def __init__(self):
         self.cache = None
 

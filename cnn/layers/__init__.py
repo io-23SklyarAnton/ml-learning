@@ -1,3 +1,4 @@
+from cnn.layers.base import Base
 from cnn.layers.convolution import Convolution
 from cnn.layers.dense import Dense
 from cnn.layers.flatten import Flatten
@@ -12,4 +13,5 @@ __all__ = [
     "MaxPooling",
     "ReLU",
     "Softmax",
+    "Base"
 ]

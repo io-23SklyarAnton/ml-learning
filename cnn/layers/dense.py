@@ -1,10 +1,10 @@
 import numpy as np
 
-from cnn.layers.base import Layer
+from cnn.layers.base import Base
 from optimizers import OptimizerFactory
 
 
-class Dense(Layer):
+class Dense(Base):
     def __init__(
             self,
             optimizer_factory: OptimizerFactory,

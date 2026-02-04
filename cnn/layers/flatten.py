@@ -1,9 +1,9 @@
 import numpy as np
 
-from cnn.layers.base import Layer
+from cnn.layers.base import Base
 
 
-class Flatten(Layer):
+class Flatten(Base):
     def __init__(self):
         self.input_shape = None
 
