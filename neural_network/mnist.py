@@ -52,7 +52,7 @@ scaled_training_X = standard_scaler.fit_transform(training_X)
 model.fit(
     X=scaled_training_X,
     Y=np.array(correct_answers),
-    n_epochs=5
+    n_epochs=1
 )
 
 scaled_unseen_X = standard_scaler.transform(unseen_X)

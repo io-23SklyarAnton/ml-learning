@@ -40,14 +40,8 @@ class Convolution(Base):
             self,
             optimizer_factory: OptimizerFactory,
     ) -> None:
-        self._optimizers = []
-        self._bias_optimizers = []
-
-        for _ in range(self.out_channels):
-            self._optimizers.append(
-                [optimizer_factory.create_optimizer() for _ in range(self.in_channels)]
-            )
-            self._bias_optimizers.append(optimizer_factory.create_optimizer())
+        self._filters_optimizer = optimizer_factory.create_optimizer()
+        self._bias_optimizer = optimizer_factory.create_optimizer()
 
     def forward_pass(
             self,
@@ -75,19 +69,16 @@ class Convolution(Base):
 
         for i in range(self.out_channels):
             delta_i = delta[i]
-            raw_db = np.sum(delta_i)
-
-            step_b = self._bias_optimizers[i].compute_step(raw_db)
-            d_b[i] = step_b
+            d_b[i] = np.sum(delta_i)
 
             for c in range(self.in_channels):
                 d_x[c] += convolve(delta_i, self._filters[i, c], mode='full')
+                d_w[i, c] = correlate(self._x[c], delta_i, mode='valid')
 
-            for c in range(self.in_channels):
-                optimizer = self._optimizers[i][c]
-                d_w[i, c] = optimizer.compute_step(correlate(self._x[c], delta_i, mode='valid'))
+        step_w = self._filters_optimizer.compute_step(d_w)
+        step_b = self._bias_optimizer.compute_step(d_b)
 
-        self._filters -= self._learning_rate * d_w
-        self._bias -= self._learning_rate * d_b
+        self._filters -= self._learning_rate * step_w
+        self._bias -= self._learning_rate * step_b
 
         return d_x

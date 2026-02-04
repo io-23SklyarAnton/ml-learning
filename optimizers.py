@@ -1,15 +1,17 @@
 import abc
+from typing import Optional
 
 import numpy as np
 
 
 class Optimizer(abc.ABC):
     @abc.abstractmethod
-    def compute_step(self, d_w: np.ndarray[np.float64]) -> np.ndarray[np.float64]: ...
+    def compute_step(self, d_w: np.ndarray) -> np.ndarray: ...
 
 
 class OptimizerFactory(abc.ABC):
-    def create_optimizer(self) -> Optimizer: ...
+    @abc.abstractmethod
+    def create_optimizer(self) -> 'Optimizer': ...
 
 
 class Adam(Optimizer):
@@ -22,14 +24,19 @@ class Adam(Optimizer):
         self._p1 = p1
         self._p2 = p2
         self._epsilon = epsilon
-        self._p = 0
-        self._r = 0
+
+        self._p: Optional[np.ndarray] = None
+        self._r: Optional[np.ndarray] = None
         self._t = 1
 
     def compute_step(
             self,
-            d_w: np.ndarray[np.float64]
-    ) -> np.ndarray[np.float64]:
+            d_w: np.ndarray
+    ) -> np.ndarray:
+        if self._p is None:
+            self._p = np.zeros_like(d_w)
+            self._r = np.zeros_like(d_w)
+
         self._p = self._p1 * self._p + (1 - self._p1) * d_w
         p_hat = self._p / (1 - self._p1 ** self._t)
 
