@@ -53,11 +53,6 @@ layers_architecture = [
     ),
     layers.Softmax()
 ]
-optimizer_factory = AdamFactory(
-    p1=0.9,
-    p2=0.999,
-    epsilon=1e-8
-)
 model = CNN(layers_architecture)
 
 data = np.array(data.values)
