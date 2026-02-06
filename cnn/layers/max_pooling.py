@@ -49,6 +49,6 @@ class MaxPooling(Base):
 
         c, h_out, pool_h, w_out, pool_w = x_reshaped.shape
         d_x_flat = d_x_reshaped.reshape(c, h_out * pool_h, w_out * pool_w)
-        d_x[:, :h_out * pool_h, :w_out * pool_w] = d_x_flat
+        d_x[:, :h_out * pool_h, :w_out * pool_w] = d_x_flat  # TODO: change after padding implementation
 
         return d_x
