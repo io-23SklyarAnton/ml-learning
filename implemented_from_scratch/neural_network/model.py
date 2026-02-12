@@ -2,7 +2,7 @@ import dataclasses
 
 import numpy as np
 
-from neural_network.activation_functions import ActivationFunction
+from implemented_from_scratch.neural_network.activation_functions import ActivationFunction
 from optimizers import Optimizer, OptimizerFactory
 
 

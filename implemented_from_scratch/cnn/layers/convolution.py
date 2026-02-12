@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.signal import correlate, convolve
 
-from cnn.layers.base import Base
+from implemented_from_scratch.cnn.layers.base import Base
 from optimizers import OptimizerFactory
 
 

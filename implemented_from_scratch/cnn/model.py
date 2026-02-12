@@ -1,4 +1,4 @@
-from cnn import layers
+from implemented_from_scratch.cnn import layers
 
 import numpy as np
 

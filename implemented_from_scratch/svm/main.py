@@ -1,10 +1,10 @@
 from pandas import read_csv
 import numpy as np
 
-from scaling.standard_scaling import StandardScaler
-from svm.model import SVMModel
+from implemented_from_scratch.scaling.standard_scaling import StandardScaler
+from implemented_from_scratch.svm.model import SVMModel
 
-data = read_csv("../datasets/iris.csv")
+data = read_csv("../../datasets/iris.csv")
 
 svm = SVMModel(
     C=1.0,

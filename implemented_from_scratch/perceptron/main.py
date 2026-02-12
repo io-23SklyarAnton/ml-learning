@@ -1,9 +1,9 @@
 from pandas import read_csv
 import numpy as np
 
-from perceptron.perceptron import Perceptron
+from implemented_from_scratch.perceptron.perceptron import Perceptron
 
-data = read_csv("../datasets/iris.csv")
+data = read_csv("../../datasets/iris.csv")
 
 perceptron = Perceptron(layer_sizes=[4, 3])
 data = np.array(data.values)

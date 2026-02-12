@@ -1,6 +1,6 @@
 import numpy as np
 
-from cnn.layers.base import Base
+from implemented_from_scratch.cnn.layers.base import Base
 
 
 class Softmax(Base):

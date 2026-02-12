@@ -2,7 +2,7 @@ from typing import Optional
 
 import numpy as np
 
-from svm.smo import SMOSolver
+from implemented_from_scratch.svm.smo import SMOSolver
 
 
 class SVMModel:

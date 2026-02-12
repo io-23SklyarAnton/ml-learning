@@ -1,12 +1,12 @@
 from pandas import read_csv
 import numpy as np
 
-from cnn.model import CNN
-from cnn import layers
+from implemented_from_scratch.cnn.model import CNN
+from implemented_from_scratch.cnn import layers
 from optimizers import AdamFactory
-from scaling.minmax_scaling import MinMaxScaler
+from implemented_from_scratch.scaling.minmax_scaling import MinMaxScaler
 
-data = read_csv('../datasets/mnist_784.csv')
+data = read_csv('../../datasets/mnist_784.csv')
 
 optimizer_factory = AdamFactory(
     p1=0.9,

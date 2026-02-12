@@ -1,20 +1,20 @@
 from pandas import read_csv
 import numpy as np
 
-from neural_network.activation_functions import ActivationFunction
-from neural_network.model import NeuralNetwork, LayerSize
+from implemented_from_scratch.neural_network.activation_functions import ActivationFunction
+from implemented_from_scratch.neural_network.model import NeuralNetwork, LayerSize
 from optimizers import AdamFactory
-from scaling.standard_scaling import StandardScaler
+from implemented_from_scratch.scaling.minmax_scaling import MinMaxScaler
 
-data = read_csv("../datasets/iris.csv")
+data = read_csv('../../datasets/mnist_784.csv')
 
 layer_sizes = [
-    LayerSize(n_neurons=4),
+    LayerSize(n_neurons=784),
     LayerSize(n_neurons=50),
     LayerSize(n_neurons=50),
     LayerSize(n_neurons=50),
     LayerSize(n_neurons=50),
-    LayerSize(n_neurons=3)
+    LayerSize(n_neurons=10)
 ]
 optimizer_factory = AdamFactory(
     p1=0.9,
@@ -31,33 +31,36 @@ data = np.array(data.values)
 np.random.shuffle(data)
 
 X = data[:, :-1].astype(float)
-y = data[:, 4]
+y = data[:, 784]
 
-training_X = X[:-5]
-unseen_X = X[-5:]
-training_y = y[:-5]
-unseen_y = y[-5:]
+unseen_count = 100
+training_X = X[:-unseen_count]
+unseen_X = X[-unseen_count:]
+training_y = y[:-unseen_count]
+unseen_y = y[-unseen_count:]
 
-_, indices = np.unique(training_y, return_inverse=True)
 correct_answers = []
 
-for i in indices:
-    answer = [0, 0, 0]
+for i in training_y:
+    answer = [0] * 10
     answer[i] = 1
     correct_answers.append(answer)
 
-standard_scaler = StandardScaler()
+standard_scaler = MinMaxScaler()
 scaled_training_X = standard_scaler.fit_transform(training_X)
 
 model.fit(
     X=scaled_training_X,
     Y=np.array(correct_answers),
-    n_epochs=100
+    n_epochs=1
 )
 
 scaled_unseen_X = standard_scaler.transform(unseen_X)
+
+correct_count = 0
 for x, y in zip(scaled_unseen_X, unseen_y):
-    print(
-        model.predict(x),
-        y
-    )
+    prediction = model.predict(x)
+    answer = np.argmax(prediction)
+    correct_count += int(answer == y)
+
+print(f"success percent is {correct_count / unseen_count * 100}")

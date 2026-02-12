@@ -1,7 +1,7 @@
 import numpy as np
 
-from perceptron.layer import Layer
-from perceptron.neuron import Neuron
+from implemented_from_scratch.perceptron.layer import Layer
+from implemented_from_scratch.perceptron.neuron import Neuron
 
 
 class Perceptron:

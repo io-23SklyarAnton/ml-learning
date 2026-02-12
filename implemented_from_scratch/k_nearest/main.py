@@ -1,10 +1,10 @@
 from pandas import read_csv
 import numpy as np
 
-from scaling.standard_scaling import StandardScaler
-from k_nearest.model import KNearest
+from implemented_from_scratch.scaling.standard_scaling import StandardScaler
+from implemented_from_scratch.k_nearest.model import KNearest
 
-data = read_csv("../datasets/iris.csv")
+data = read_csv("../../datasets/iris.csv")
 
 data = np.array(data.values)
 np.random.shuffle(data)
