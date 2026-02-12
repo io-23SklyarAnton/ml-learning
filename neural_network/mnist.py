@@ -6,7 +6,7 @@ from neural_network.model import NeuralNetwork, LayerSize
 from optimizers import AdamFactory
 from scaling.minmax_scaling import MinMaxScaler
 
-data = read_csv('../mnist_784.csv')
+data = read_csv('../datasets/mnist_784.csv')
 
 layer_sizes = [
     LayerSize(n_neurons=784),

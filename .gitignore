@@ -4,9 +4,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 .idea
-mnist_784.csv
+datasets/mnist_784.csv
 # C extensions
 *.so
+datasets/*
 
 # Distribution / packaging
 .Python

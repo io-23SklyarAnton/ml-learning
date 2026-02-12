@@ -6,7 +6,7 @@ from neural_network.model import NeuralNetwork, LayerSize
 from optimizers import AdamFactory
 from scaling.standard_scaling import StandardScaler
 
-data = read_csv("../iris.csv")
+data = read_csv("../datasets/iris.csv")
 
 layer_sizes = [
     LayerSize(n_neurons=4),

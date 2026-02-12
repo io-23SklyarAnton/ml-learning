@@ -6,7 +6,7 @@ from cnn import layers
 from optimizers import AdamFactory
 from scaling.minmax_scaling import MinMaxScaler
 
-data = read_csv('../mnist_784.csv')
+data = read_csv('../datasets/mnist_784.csv')
 
 optimizer_factory = AdamFactory(
     p1=0.9,

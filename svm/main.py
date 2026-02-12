@@ -4,7 +4,7 @@ import numpy as np
 from scaling.standard_scaling import StandardScaler
 from svm.model import SVMModel
 
-data = read_csv("../iris.csv")
+data = read_csv("../datasets/iris.csv")
 
 svm = SVMModel(
     C=1.0,

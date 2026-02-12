@@ -4,7 +4,7 @@ import numpy as np
 
 from scaling.standard_scaling import StandardScaler
 
-data = read_csv("../iris.csv")
+data = read_csv("../datasets/iris.csv")
 
 data = np.array(data.values)
 np.random.shuffle(data)

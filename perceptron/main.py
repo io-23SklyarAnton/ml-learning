@@ -3,7 +3,7 @@ import numpy as np
 
 from perceptron.perceptron import Perceptron
 
-data = read_csv("../iris.csv")
+data = read_csv("../datasets/iris.csv")
 
 perceptron = Perceptron(layer_sizes=[4, 3])
 data = np.array(data.values)
