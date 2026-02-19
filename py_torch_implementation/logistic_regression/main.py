@@ -2,7 +2,7 @@ from sklearn.linear_model import LogisticRegression
 from pandas import read_csv
 import numpy as np
 
-from implemented_from_scratch.scaling import StandardScaler
+from implemented_from_scratch.scaling.standard_scaling import StandardScaler
 
 data = read_csv("../datasets/iris.csv")
 
