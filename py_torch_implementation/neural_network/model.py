@@ -10,20 +10,21 @@ class Model(nn.Module):
             n_output: int,
     ):
         super().__init__()
-        self.layer_1 = nn.Linear(n_input, n_hidden, dtype=torch.float64)
-        self.layer_2 = nn.Linear(n_hidden, n_hidden, dtype=torch.float64)
-        self.layer_3 = nn.Linear(n_hidden, n_hidden, dtype=torch.float64)
-        self.layer_4 = nn.Linear(n_hidden, n_output, dtype=torch.float64)
+        layer_1 = nn.Linear(n_input, n_hidden, dtype=torch.float64)
+        activation_1 = nn.ReLU()
+        layer_2 = nn.Linear(n_hidden, n_hidden, dtype=torch.float64)
+        activation_2 = nn.ReLU()
+        layer_3 = nn.Linear(n_hidden, n_output, dtype=torch.float64)
+        activation_3 = nn.Sigmoid()
+        layers = [layer_1, activation_1, layer_2, activation_2, layer_3, activation_3]
+
+        self.layers = nn.ModuleList(layers)
 
     def forward(
             self,
             x: Tensor
     ) -> Tensor:
-        x = self.layer_1(x)
-        x = nn.ReLU()(x)
-        x = self.layer_2(x)
-        x = nn.ReLU()(x)
-        x = self.layer_4(x)
+        for layer in self.layers:
+            x = layer(x)
 
-        x = nn.Sigmoid()(x)
         return x
