@@ -15,7 +15,7 @@ class Model(nn.Module):
         layer_2 = nn.Linear(n_hidden, n_hidden, dtype=torch.float64)
         activation_2 = nn.ReLU()
         layer_3 = nn.Linear(n_hidden, n_output, dtype=torch.float64)
-        activation_3 = nn.Sigmoid()
+        activation_3 = nn.Softmax()
         layers = [layer_1, activation_1, layer_2, activation_2, layer_3, activation_3]
 
         self.layers = nn.ModuleList(layers)

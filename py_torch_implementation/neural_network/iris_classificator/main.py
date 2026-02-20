@@ -5,7 +5,7 @@ from torch import nn
 from torch.utils.data import TensorDataset, DataLoader
 
 from implemented_from_scratch.scaling.standard_scaling import StandardScaler
-from py_torch_implementation.neural_network.model import Model
+from py_torch_implementation.neural_network.iris_classificator.model import Model
 
 data = read_csv("../../datasets/iris.csv")
 
