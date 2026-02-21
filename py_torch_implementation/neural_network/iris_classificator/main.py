@@ -1,7 +1,7 @@
 import torch
 from pandas import read_csv
 import numpy as np
-from torch import nn
+from torch import nn, softmax
 from torch.utils.data import TensorDataset, DataLoader
 
 from implemented_from_scratch.scaling.standard_scaling import StandardScaler
@@ -27,7 +27,7 @@ _, indices = np.unique(training_y, return_inverse=True)
 correct_answers = []
 
 for i in indices:
-    answer = [-1, -1, -1]
+    answer = [0, 0, 0]
     answer[i] = 1
     correct_answers.append(answer)
 
@@ -49,21 +49,19 @@ unseen_dataset = TensorDataset(
 )
 unseen_dataloader = DataLoader(unseen_dataset, batch_size=1, shuffle=False)
 
-loss_f = nn.MSELoss()
+loss_f = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters())
 
 for epoch in range(20):
     for x, y in train_data_loader:
-        y = y.to(torch.float64).reshape(-1, 1)
-
         optimizer.zero_grad()
 
-        predict = model(x).T
+        predict = model(x)
         loss = loss_f(predict, y)
         loss.backward()
 
         optimizer.step()
 
 for x, y in unseen_dataloader:
-    predict = model(x)
+    predict = softmax(model(x), dim=1)
     print(f"predict:{predict}, y: {y}")
