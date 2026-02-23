@@ -16,7 +16,7 @@ def tokenizer(text):
     return text.split()
 
 
-def get_tokens(dataset):
+def get_token_labels(dataset):
     token_label = {}
     index = 2
     for line, label in dataset:
@@ -28,6 +28,12 @@ def get_tokens(dataset):
                 index += 1
 
     token_label['<pad>'] = 0
-    token_label['<unk>'] = 1
 
     return token_label
+
+
+def get_token_label(
+        token: str,
+        token_labels: dict[str, int]
+) -> int:
+    return token_labels.get(token, 1)
