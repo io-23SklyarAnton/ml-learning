@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+from torch.nn.utils.rnn import pack_padded_sequence
 
 
 class Model(nn.Module):
@@ -27,13 +28,21 @@ class Model(nn.Module):
 
     def forward(
             self,
-            x: torch.LongTensor
+                x: torch.LongTensor,
+            lengths: torch.Tensor
     ) -> torch.FloatTensor:
         input_ = self._embedding_layer(x)
 
-        rnn_out, hidden = self._rnn_layer(input_)
-        last_time_step_out = rnn_out[:, -1, :]
+        packed_embedded = pack_padded_sequence(
+            input_,
+            lengths.cpu(),
+            batch_first=True,
+            enforce_sorted=False
+        )
 
-        logits = self._linear_layer(last_time_step_out)
+        _, hidden = self._rnn_layer(packed_embedded)
+        last_layer_hidden = hidden[-1, :, :]
+
+        logits = self._linear_layer(last_layer_hidden)
 
         return logits
