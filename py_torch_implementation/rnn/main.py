@@ -9,7 +9,7 @@ from sklearn.model_selection import train_test_split
 from py_torch_implementation.rnn.data_loader import get_data_loader
 from py_torch_implementation.rnn.utils import get_token_label_matches
 
-from py_torch_implementation.rnn.model import Model
+from py_torch_implementation.rnn.lstm_model import Model as LstmModel
 
 df = pd.read_csv("../../datasets/IMDB Dataset.csv")
 
@@ -45,7 +45,7 @@ valid_data_loader = get_data_loader(
     token_labels=token_labels,
 )
 
-model = Model(
+model = LstmModel(
     num_embeddings=len(token_labels),
     embedding_dim=100,
     hidden_size=100
@@ -86,11 +86,20 @@ for epoch in range(5):
             exact_predict = (predict > 0.0).float()
             correct_guesses += (exact_predict == label_list).sum().item()
             total_samples += label_list.size(0)
-            epoch_accuracy = correct_guesses / total_samples
 
+        epoch_accuracy = correct_guesses / total_samples
         print(f"Validation epoch_accuracy: {epoch_accuracy}\n")
 
+correct_guesses = 0
+total_samples = 0
 with torch.no_grad():
     for padded_text_list, label_list, lengths in test_data_loader:
         predict = model(padded_text_list, lengths)
         print(f"predict is {sigmoid(predict[0])}, label is {label_list[0]}")
+
+        exact_predict = (predict > 0.0).float()
+        correct_guesses += (exact_predict == label_list).sum().item()
+        total_samples += label_list.size(0)
+
+    epoch_accuracy = correct_guesses / total_samples
+    print(f"Test accuracy: {epoch_accuracy}\n")
