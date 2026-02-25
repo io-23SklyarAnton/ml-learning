@@ -1,6 +1,5 @@
 import pandas as pd
 import torch
-from torch import sigmoid
 from torch.nn import BCEWithLogitsLoss
 from torch.optim import Adam
 from torch.utils.data import random_split
@@ -20,7 +19,7 @@ if __name__ == '__main__':
     df = df.dropna().reset_index(drop=True)
 
     df_copy = df.copy()
-    df_copy['sentiment'] = df_copy['sentiment'].replace({"positive": 1., "negative": 0.})
+    df_copy['sentiment'] = df_copy['sentiment'].map({"positive": 1., "negative": 0.})
 
     train_dataset, test_dataset = train_test_split(df_copy.values, test_size=0.1)
 
@@ -34,17 +33,17 @@ if __name__ == '__main__':
 
     train_data_loader = get_data_loader(
         dataset=processed_train,
-        batch_size=100,
+        batch_size=50,
     )
 
     test_data_loader = get_data_loader(
         dataset=processed_test,
-        batch_size=1,
+        batch_size=50,
     )
 
     valid_data_loader = get_data_loader(
         dataset=processed_valid,
-        batch_size=100,
+        batch_size=50,
     )
 
     model = LstmModel(
@@ -109,7 +108,6 @@ if __name__ == '__main__':
             padded_text_list = padded_text_list.to(device)
             label_list = label_list.to(device)
             predict = model(padded_text_list, lengths)
-            print(f"predict is {sigmoid(predict[0])}, label is {label_list[0]}")
 
             exact_predict = (predict > 0.0).float()
             correct_guesses += (exact_predict == label_list).sum().item()
