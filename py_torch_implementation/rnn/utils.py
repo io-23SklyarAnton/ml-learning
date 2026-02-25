@@ -51,3 +51,15 @@ def get_device():
         device = "mps"
 
     return torch.device(device)
+
+
+def pre_process_dataset(raw_dataset, token_labels):
+    processed_data = []
+
+    for text, label in raw_dataset:
+        token_ids = get_token_labels(text, token_labels)
+
+        text_tensor = torch.tensor(token_ids, dtype=torch.int64)
+        processed_data.append((text_tensor, label))
+
+    return processed_data

@@ -10,6 +10,7 @@ from py_torch_implementation.rnn.data_loader import get_data_loader
 from py_torch_implementation.rnn import utils
 
 from py_torch_implementation.rnn.lstm_model import Model as LstmModel
+from py_torch_implementation.rnn.utils import pre_process_dataset
 
 if __name__ == '__main__':
     device = utils.get_device()
@@ -27,25 +28,23 @@ if __name__ == '__main__':
 
     token_labels = utils.get_token_label_matches(train_dataset)
 
+    processed_train = pre_process_dataset(train_dataset, token_labels)
+    processed_test = pre_process_dataset(test_dataset, token_labels)
+    processed_valid = pre_process_dataset(valid_dataset, token_labels)
+
     train_data_loader = get_data_loader(
-        dataset=train_dataset,
-        batch_size=30,
-        shuffle=True,
-        token_labels=token_labels,
+        dataset=processed_train,
+        batch_size=100,
     )
 
     test_data_loader = get_data_loader(
-        dataset=test_dataset,
+        dataset=processed_test,
         batch_size=1,
-        shuffle=False,
-        token_labels=token_labels
     )
 
     valid_data_loader = get_data_loader(
-        dataset=valid_dataset,
+        dataset=processed_valid,
         batch_size=100,
-        shuffle=False,
-        token_labels=token_labels,
     )
 
     model = LstmModel(
