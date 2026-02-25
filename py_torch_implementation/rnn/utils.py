@@ -1,5 +1,7 @@
 import re
 
+import torch
+
 
 def tokenizer(text):
     text = re.sub('<[^>]*>', '', text)
@@ -38,3 +40,14 @@ def get_token_labels(
         token_labels: dict[str, int]
 ) -> list[int]:
     return [token_labels.get(token.lower(), 1) for token in tokenizer(tokens)]
+
+
+def get_device():
+    device = "cpu"
+
+    if torch.cuda.is_available():
+        device = "cuda"
+    elif torch.mps.is_available():
+        device = "mps"
+
+    return torch.device(device)

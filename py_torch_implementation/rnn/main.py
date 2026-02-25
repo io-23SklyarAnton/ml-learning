@@ -7,12 +7,12 @@ from torch.utils.data import random_split
 from sklearn.model_selection import train_test_split
 
 from py_torch_implementation.rnn.data_loader import get_data_loader
-from py_torch_implementation.rnn.utils import get_token_label_matches
+from py_torch_implementation.rnn import utils
 
 from py_torch_implementation.rnn.lstm_model import Model as LstmModel
 
 if __name__ == '__main__':
-    device = torch.device("mps")
+    device = utils.get_device()
 
     df = pd.read_csv("../../datasets/IMDB Dataset.csv")
 
@@ -25,7 +25,7 @@ if __name__ == '__main__':
 
     train_dataset, valid_dataset = random_split(train_dataset, [40_000, 5000])
 
-    token_labels = get_token_label_matches(train_dataset)
+    token_labels = utils.get_token_label_matches(train_dataset)
 
     train_data_loader = get_data_loader(
         dataset=train_dataset,
