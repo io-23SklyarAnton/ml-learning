@@ -58,7 +58,7 @@ if __name__ == '__main__':
     optimizer = Adam(model.parameters())
 
     print("LEARNING")
-    for epoch in range(5):
+    for epoch in range(3):
         correct_guesses = 0
         total_loss = 0.0
         total_samples = 0
