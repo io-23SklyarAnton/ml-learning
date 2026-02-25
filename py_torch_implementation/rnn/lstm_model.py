@@ -20,10 +20,11 @@ class Model(nn.Module):
             hidden_size=hidden_size,
             num_layers=2,
             dropout=0.3,
-            batch_first=True
+            batch_first=True,
+            bidirectional=True,
         )
         self._linear_layer_1 = nn.Linear(
-            in_features=hidden_size,
+            in_features=hidden_size * 2,
             out_features=hidden_size
         )
         self._relu_layer = nn.ReLU()
@@ -47,7 +48,10 @@ class Model(nn.Module):
         )
 
         _, (hidden, cell) = self._lstm_layer(packed_embedded)
-        x = hidden[-1, :, :]
+        hidden_forward = hidden[-2, :, :]
+        hidden_backward = hidden[-1, :, :]
+
+        x = torch.cat((hidden_forward, hidden_backward), dim=1)
 
         x = self._linear_layer_1(x)
         x = self._relu_layer(x)
