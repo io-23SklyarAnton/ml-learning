@@ -1,117 +1,144 @@
-import pandas as pd
 import torch
-from torch.nn import BCEWithLogitsLoss
-from torch.optim import Adam
-from torch.utils.data import random_split
-from sklearn.model_selection import train_test_split
+from torch.nn import Module
+from torch.nn.modules.loss import _Loss, BCEWithLogitsLoss
+from torch.optim import Optimizer, Adam
+from torch.utils.data import DataLoader
+from typing import Dict, Tuple
 
-from py_torch_implementation.rnn.data_loader import get_data_loader
 from py_torch_implementation.rnn import utils
-
+from py_torch_implementation.rnn.config import Config
+from py_torch_implementation.rnn.prepare_data import prepare_data
 from py_torch_implementation.rnn.lstm_model import Model as LstmModel
-from py_torch_implementation.rnn.utils import pre_process_dataset
 
-if __name__ == '__main__':
-    device = utils.get_device()
 
-    df = pd.read_csv("../../datasets/IMDB Dataset.csv")
+class Trainer:
+    def __init__(
+            self,
+            *,
+            model: Module,
+            dataloaders: Dict[str, DataLoader],
+            criterion: _Loss,
+            optimizer: Optimizer,
+            device: torch.device,
+            config: Config
+    ) -> None:
+        self.model = model
+        self.dataloaders = dataloaders
+        self.criterion = criterion
+        self.optimizer = optimizer
+        self.device = device
+        self.epochs = config.EPOCHS
 
-    df = df.dropna().reset_index(drop=True)
+        self.model = self.model.to(self.device)
 
-    df_copy = df.copy()
-    df_copy['sentiment'] = df_copy['sentiment'].map({"positive": 1., "negative": 0.})
+    def train_epoch(
+            self,
+            epoch: int
+    ) -> Tuple[float, float]:
+        self.model.train()
 
-    train_dataset, test_dataset = train_test_split(df_copy.values, test_size=0.1)
-
-    train_dataset, valid_dataset = random_split(train_dataset, [40_000, 5000])
-
-    token_labels = utils.get_token_label_matches(train_dataset)
-
-    processed_train = pre_process_dataset(train_dataset, token_labels)
-    processed_test = pre_process_dataset(test_dataset, token_labels)
-    processed_valid = pre_process_dataset(valid_dataset, token_labels)
-
-    train_data_loader = get_data_loader(
-        dataset=processed_train,
-        batch_size=50,
-    )
-
-    test_data_loader = get_data_loader(
-        dataset=processed_test,
-        batch_size=50,
-    )
-
-    valid_data_loader = get_data_loader(
-        dataset=processed_valid,
-        batch_size=50,
-    )
-
-    model = LstmModel(
-        num_embeddings=len(token_labels),
-        embedding_dim=50,
-        hidden_size=100
-    ).to(device)
-
-    loss_f = BCEWithLogitsLoss()
-    optimizer = Adam(model.parameters())
-
-    print("LEARNING")
-    for epoch in range(3):
-        correct_guesses = 0
         total_loss = 0.0
+        correct_guesses = 0
         total_samples = 0
 
-        model.train()
-        batches_processed = 0
-        for padded_text_list, label_list, lengths in train_data_loader:
-            padded_text_list = padded_text_list.to(device)
-            label_list = label_list.to(device)
-            optimizer.zero_grad()
-            predict = model(padded_text_list, lengths)
-            loss = loss_f(predict, label_list)
-            loss.backward()
-            optimizer.step()
+        train_loader = self.dataloaders['train']
 
-            batches_processed += 1
+        for batches_processed, (padded_texts, labels, lengths) in enumerate(train_loader, 1):
+            padded_texts, labels = padded_texts.to(self.device), labels.to(self.device)
+
+            self.optimizer.zero_grad()
+            predictions = self.model(padded_texts, lengths)
+            loss = self.criterion(predictions, labels)
+            loss.backward()
+            self.optimizer.step()
+
             total_loss += loss.item()
-            exact_predict = (predict > 0.0).float()
-            correct_guesses += (exact_predict == label_list).sum().item()
-            total_samples += label_list.size(0)
+
+            exact_predictions = (predictions > 0.0).float()
+            correct_guesses += (exact_predictions == labels).sum().item()
+            total_samples += labels.size(0)
 
             if batches_processed % 100 == 0:
-                print(f"processed {batches_processed} batches")
+                print(f"Epoch {epoch} | Processed {batches_processed}/{len(train_loader)} batches")
 
-        avg_epoch_loss = total_loss / len(train_data_loader)
-        epoch_accuracy = correct_guesses / total_samples
-        print(f"epoch {epoch} finished\ntrain loss {avg_epoch_loss}\nepoch_accuracy {epoch_accuracy}\n")
+        avg_loss = total_loss / len(train_loader)
+        accuracy = correct_guesses / total_samples
+        return avg_loss, accuracy
 
-        model.eval()
+    def evaluate(
+            self,
+            phase: str
+    ) -> Tuple[float, float]:
+        self.model.eval()
+        total_loss = 0.0
         correct_guesses = 0
         total_samples = 0
+
+        loader = self.dataloaders[phase]
+
         with torch.no_grad():
-            for padded_text_list, label_list, lengths in valid_data_loader:
-                padded_text_list = padded_text_list.to(device)
-                label_list = label_list.to(device)
-                predict = model(padded_text_list, lengths)
+            for padded_texts, labels, lengths in loader:
+                padded_texts, labels = padded_texts.to(self.device), labels.to(self.device)
+                predictions = self.model(padded_texts, lengths)
 
-                exact_predict = (predict > 0.0).float()
-                correct_guesses += (exact_predict == label_list).sum().item()
-                total_samples += label_list.size(0)
+                loss = self.criterion(predictions, labels)
+                total_loss += loss.item()
 
-            epoch_accuracy = correct_guesses / total_samples
-            print(f"Validation epoch_accuracy: {epoch_accuracy}\n")
+                exact_predictions = (predictions > 0.0).float()
+                correct_guesses += (exact_predictions == labels).sum().item()
+                total_samples += labels.size(0)
 
-    correct_guesses = 0
-    total_samples = 0
-    with torch.no_grad():
-        for padded_text_list, label_list, lengths in test_data_loader:
-            padded_text_list = padded_text_list.to(device)
-            label_list = label_list.to(device)
-            predict = model(padded_text_list, lengths)
+        avg_loss = total_loss / len(loader)
+        accuracy = correct_guesses / total_samples
+        return avg_loss, accuracy
 
-            exact_predict = (predict > 0.0).float()
-            correct_guesses += (exact_predict == label_list).sum().item()
-            total_samples += label_list.size(0)
+    def train(self) -> None:
+        print("Starting training...")
+        for epoch in range(1, self.epochs + 1):
+            train_loss, train_acc = self.train_epoch(epoch)
+            print(f"Epoch {epoch} finished | Train Loss: {train_loss:.4f} | Train Acc: {train_acc:.4f}")
 
-        epoch_accuracy = correct_guesses / total_samples
-        print(f"Test accuracy: {epoch_accuracy}\n")
+            val_loss, val_acc = self.evaluate('valid')
+            print(f"Epoch {epoch} Validation | Valid Loss: {val_loss:.4f} | Valid Acc: {val_acc:.4f}\n")
+
+    def test(self) -> None:
+        print("Testing model...")
+        test_loss, test_acc = self.evaluate('test')
+        print(f"Test Loss: {test_loss:.4f} | Test Acc: {test_acc:.4f}")
+
+
+def main() -> None:
+    device = utils.get_device()
+    config = Config()
+
+    print("Preparing data...")
+    dataloaders, vocab_size = prepare_data(config)
+
+    model = LstmModel(
+        num_embeddings=vocab_size,
+        embedding_dim=config.EMBEDDING_DIM,
+        hidden_size=config.HIDDEN_SIZE,
+    )
+
+    criterion = BCEWithLogitsLoss()
+
+    optimizer = Adam(
+        model.parameters(),
+        config.LEARNING_RATE
+    )
+
+    trainer = Trainer(
+        model=model,
+        dataloaders=dataloaders,
+        criterion=criterion,
+        optimizer=optimizer,
+        device=device,
+        config=config,
+    )
+
+    trainer.train()
+    trainer.test()
+
+
+if __name__ == '__main__':
+    main()

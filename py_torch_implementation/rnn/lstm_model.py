@@ -6,6 +6,7 @@ from torch.nn.utils.rnn import pack_padded_sequence
 class Model(nn.Module):
     def __init__(
             self,
+            *,
             num_embeddings: int,
             embedding_dim: int,
             hidden_size: int,
